@@ -1,28 +1,52 @@
-INSTALL_DIR = /usr/local/bin
 
-INCLUDEDIR = .
+# Copyright (C) 2006-2008 Junjiro Okajima
+# Copyright (C) 2006-2008 Tomas Matejicek, slax.org
+#
+# LICENSE follows the described ones in lzma and squashfs.
 
-CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_GNU_SOURCE -O2
+# $Id: Makefile,v 1.30 2008-03-12 16:24:54 jro Exp $
 
-all: mksquashfs unsquashfs
+# paths
+Sqlzma = ${CURDIR}
 
-mksquashfs: mksquashfs.o read_fs.o sort.o
-	$(CC) mksquashfs.o read_fs.o sort.o -lz -lpthread -lm -o $@
+LzmaVer = lzma457
+Lzma = ${Sqlzma}/${LzmaVer}
+SqVer = squashfs3.4
+Squashfs = ..
+KVer = linux-2.6.26
+SqFs = ${Squashfs}/kernel-patches/${KVer}/fs/squashfs
+#KDir = /lib/modules/$(shell uname -r)/build
+#KDir = ${SqFs}/../..
 
-mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h
+ifeq (${LzmaVer}, lzma443)
+LzmaC = ${Lzma}/C/7zip/Compress/LZMA_C
+LzmaAlone = ${Lzma}/C/7zip/Compress/LZMA_Alone
+else
+LzmaC = ${Lzma}/C/Compress/Lzma
+LzmaAlone = ${Lzma}/CPP/7zip/Compress/LZMA_Alone
+endif
+SqTools = ${Squashfs}/squashfs-tools
 
-read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h
+# enable it if you want to add -g option when compiling
+#UseDebugFlags = 1
+#MyDebugFlags = -DSQUASHFS_TRACE
+# disable it if you don't want to compile squashfs kernel module here
+# BuildSquashfs = 1
 
-sort.o: sort.c squashfs_fs.h global.h sort.h
+export
 
-unsquashfs: unsquashfs.o
-	$(CC) unsquashfs.o -lz -lpthread -lm -o $@
-
-unsquashfs.o: unsquashfs.c squashfs_fs.h read_fs.h global.h
+all:
+	${MAKE} -C ${LzmaC} -f sqlzma.mk $@
+	${MAKE} -C ${LzmaAlone} -f sqlzma.mk $@
+	${MAKE} -C ${SqTools} -f Makefile.squash $@
 
 clean:
-	-rm -f *.o mksquashfs unsquashfs
+	${MAKE} -C ${LzmaC} -f sqlzma.mk $@
+	${MAKE} -C ${LzmaAlone} -f sqlzma.mk $@
+	${MAKE} -C ${SqTools} -f Makefile.squash $@
+	${RM} *~
 
-install: mksquashfs unsquashfs
-	mkdir -p $(INSTALL_DIR)
-	cp mksquashfs unsquashfs $(INSTALL_DIR)
+########################################
+
+-include priv.mk
+
