@@ -1,7 +1,7 @@
 /*
  * Read a squashfs filesystem.  This is a highly compressed read only filesystem.
  *
- * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007
+ * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008
  * Phillip Lougher <phillip@lougher.demon.co.uk>
  *
  * This program is free software; you can redistribute it and/or
@@ -190,7 +190,7 @@ int scan_inode_table(int fd, long long start, long long end, long long root_inod
 				long long start = inode.start_block;
 				unsigned int *block_list;
 
-				TRACE("scan_inode_table: regular file, file_size %lld, blocks %d\n", inode.file_size, blocks);
+				TRACE("scan_inode_table: regular file, file_size %d, blocks %d\n", inode.file_size, blocks);
 
 				if((block_list = malloc(blocks * sizeof(unsigned int))) == NULL) {
 					ERROR("Out of memory in block list malloc\n");
@@ -231,20 +231,20 @@ int scan_inode_table(int fd, long long start, long long end, long long root_inod
 				} else
 					memcpy(&inode, cur_ptr, sizeof(inode));
 
-				TRACE("scan_inode_table: extended regular file, file_size %lld, blocks %d\n", inode.file_size, blocks);
-
-				cur_ptr += sizeof(inode);
 				frag_bytes = inode.fragment == SQUASHFS_INVALID_FRAG ? 0 : inode.file_size % sBlk->block_size;
 				blocks = inode.fragment == SQUASHFS_INVALID_FRAG ? (inode.file_size
 					+ sBlk->block_size - 1) >> sBlk->block_log : inode.file_size >>
 					sBlk->block_log;
 				start = inode.start_block;
 
+				TRACE("scan_inode_table: extended regular file, file_size %lld, blocks %d\n", inode.file_size, blocks);
+
 				if((block_list = malloc(blocks * sizeof(unsigned int))) == NULL) {
 					ERROR("Out of memory in block list malloc\n");
 					goto failed;
 				}
 
+				cur_ptr += sizeof(inode);
 				if(swap) {
 					unsigned int sblock_list[blocks];
 					memcpy(sblock_list, cur_ptr, blocks * sizeof(unsigned int));
@@ -398,7 +398,7 @@ int read_super(int fd, squashfs_super_block *sBlk, int *be, char *source)
 	TRACE("sBlk->directory_table_start %llx\n", sBlk->directory_table_start);
 	TRACE("sBlk->uid_start %llx\n", sBlk->uid_start);
 	TRACE("sBlk->fragment_table_start %llx\n", sBlk->fragment_table_start);
-	TRACE("sBlk->lookup_table_start %xllx\n", sBlk->lookup_table_start);
+	TRACE("sBlk->lookup_table_start %llx\n", sBlk->lookup_table_start);
 	printf("\n");
 
 	return TRUE;
@@ -416,7 +416,7 @@ unsigned char *squashfs_readdir(int fd, int root_entries, unsigned int directory
 	squashfs_dir_entry *dire = (squashfs_dir_entry *) buffer;
 	unsigned char *directory_table = NULL;
 	int byte, bytes = 0, dir_count;
-	long long start = sBlk->directory_table_start + directory_start_block, last_start_block; 
+	long long start = sBlk->directory_table_start + directory_start_block, last_start_block = start; 
 
 	size += offset;
 	if((directory_table = malloc((size + SQUASHFS_METADATA_SIZE * 2 - 1) & ~(SQUASHFS_METADATA_SIZE - 1))) == NULL)
