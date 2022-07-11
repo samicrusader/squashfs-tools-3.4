@@ -48,15 +48,12 @@
 #include <regex.h>
 #include <fnmatch.h>
 
-#ifndef linux
-#define __BYTE_ORDER BYTE_ORDER
-#define __BIG_ENDIAN BIG_ENDIAN
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#include <sys/sysctl.h>
-#else
 #include <endian.h>
 #include <sys/sysinfo.h>
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ <= 30
+  #include <sys/sysctl.h>
 #endif
+#include <sys/sysmacros.h>
 
 #include <squashfs_fs.h>
 #include "mksquashfs.h"
@@ -110,7 +107,8 @@ int columns;
 /* filesystem flags for building */
 int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
 int noI = 0, noD = 0, check_data = 0;
-int swap, silent = TRUE;
+static int swap;
+int silent = TRUE;
 long long global_uid = -1, global_gid = -1;
 int exportable = TRUE;
 int progress = TRUE;
@@ -2691,7 +2689,7 @@ struct inode_info *lookup_inode(struct stat *buf)
 }
 
 
-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir, struct inode_info *inode_info, void *data, struct dir_info *dir)
+static inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir, struct inode_info *inode_info, void *data, struct dir_info *dir)
 {
 	if((dir->count % DIR_ENTRIES) == 0)
 		if((dir->list = realloc(dir->list, (dir->count + DIR_ENTRIES) * sizeof(struct dir_ent *))) == NULL)

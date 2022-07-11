@@ -47,14 +47,9 @@
 #include <math.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <sys/sysmacros.h>
 
-#ifndef linux
-#define __BYTE_ORDER BYTE_ORDER
-#define __BIG_ENDIAN BIG_ENDIAN
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#else
 #include <endian.h>
-#endif
 
 #include "squashfs_fs.h"
 #include "read_fs.h"
